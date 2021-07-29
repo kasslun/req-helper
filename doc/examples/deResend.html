@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>deResend</title>
+  <link rel="stylesheet" href="./assets/example.css">
+</head>
+<body>
+<button id="de">proxyFn()</button>
+<button id="enable" disabled="disabled">proxyFn.enable()</button>
+<div id="logs">
+</div>
+<script type="module">
+  import logs from "./helper/logs.js";
+  import fetchMock from "./helper/fetchMock.js";
+  import { deResend } from "../../dist/req-helper.esm.js";
+  const addLog = logs('#logs');
+
+  const de = document.querySelector('#de')
+  const enable = document.querySelector("#enable");
+
+  addLog('const proxyFn = deResend(fn, statusChange, 5000)!')
+  const proxyFn = deResend(() => {
+    addLog('call fn()');
+    return fetchMock().then(() => {
+      addLog('The promise returned by fn has been fulfilled, waiting 5000ms.')
+    });
+  }, disabled => {
+    if (disabled) {
+      addLog('fn() disabled, you can click proxyFn.enable()');
+      de.setAttribute('disabled', "disabled")
+      enable.removeAttribute('disabled')
+    } else {
+      addLog('fn() enabled 😄');
+      de.removeAttribute('disabled')
+      enable.setAttribute('disabled', "disabled")
+    }
+  }, 5000)
+  de.addEventListener('click', proxyFn);
+  enable.addEventListener('click', proxyFn.enable);
+</script>
+</body>
+</html>

@@ -33,17 +33,17 @@ require('req-helper', ({ polling }) => {
 ```
 
 ## Function description
-- [cache](./doc/markdowns/cache.md): The response to a request is cached in memory for a period of time.
-- [deResend](./doc/markdowns/deResend.md): Prevent duplicate requests.
-- [latest](./doc/markdowns/latest.md): Control frequent queries in a short time through cache and concurrency restrictions.
-- [packing](./doc/markdowns/packing.md): Merge frequently requested data and use the requested data for batch interface.
-- [polling](./doc/markdowns/polling.md): Polling for the same request.
+- [cache](#cache): The response to a request is cached in memory for a period of time.
+- [deResend](#deResend): Prevent duplicate requests.
+- [latest](#latest): Control frequent queries in a short time through cache and concurrency restrictions.
+- [packing](#packing): Merge frequently requested data and use the requested data for batch interface.
+- [polling](#polling): Polling for the same request.
 
 
 ## Some precautions
 
 #### About parameter fn
-Most functions of req-helper need to take a function as a parameter. This function needs to send an ajax request and return a promise object to express the status of the request.
+Most functions of req-helper need to take a function as a parameter. This function needs to send an ajax request and return a promise object to express the status of the request. 
 
 We can handle ajax through promise at any time, such as [Fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) and [Axios](https://axios-http.com/). You can also use `XMLHttpRequest` with [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise).
 
@@ -75,7 +75,7 @@ cache(() => fetch(url)).then(() => {
 
 ```
 
-#### About time
+#### About time 
 Most functions of req-helper involve time parameters, such as interval time and cache time. All times are in milliseconds. Some parameters allow 0, and the score parameter must be greater than 0
 
 Some browsers (such as chrome) have a phenomenon: The value of `setTimeout` parameter 2 is `0`, which is actually 1 ms. Moreover, `setTimeout` is nested in multiple, and the time is more unpredictable.
@@ -114,27 +114,4 @@ const proxyFn = (function (fn) {
   }
 })(fn);
 ```
-
-## License
-
-The MIT License (MIT)
-
-Copyright (c) 2021 kasslun<kasslun@gmail.com>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+ 

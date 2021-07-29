@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "dist",
+    "sourceMap": false,
+    "target": "es2015",
+    "moduleResolution": "node",
+    "useDefineForClassFields": false,
+    "allowJs": false,
+    "strict": true,
+    "noUnusedLocals": true,
+    "experimentalDecorators": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "removeComments": false,
+    "rootDir": ".",
+    "lib": [
+      "dom",
+      "es2015"
+    ]
+  }
+}

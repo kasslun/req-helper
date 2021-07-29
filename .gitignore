@@ -1,0 +1,19 @@
+# IDEs and editors
+.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.vscode/
+
+# Optional npm, git, yarn
+.npm
+.git
+.yarn-integrity
+node_modules
+
+# System Files
+.DS_Store
+Thumbs.db

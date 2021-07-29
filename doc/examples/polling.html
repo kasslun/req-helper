@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="./assets/example.css">
+  <title>polling</title>
+</head>
+<body>
+<button id="start">start, point(fn, 3000)</button>
+<button id="stop">controller.stop()</button>
+<button id="resume">controller.resume()</button>
+<button id="refresh">controller.refresh()</button>
+<button id="refresh1">controller.refresh(5000)</button>
+<div id="logs">
+</div>
+<script type="module">
+import logs from "./helper/logs.js";
+import fetchMock from "./helper/fetchMock.js";
+import { polling } from "../../dist/req-helper.esm.js";
+
+const addLog = logs('#logs');
+const start = document.querySelector('#start');
+let controller;
+start.addEventListener('click', () => {
+  addLog('start...')
+  if (controller) {
+    return;
+  }
+  start.setAttribute('disabled', 'disabled');
+  controller = polling(() => {
+    addLog('call fn...')
+    return fetchMock().then(() => {
+      addLog('The promise returned by fn() has been fulfilled, and waiting.')
+    })
+  }, 3000);
+})
+
+document.querySelector('#stop').addEventListener('click', () => {
+  if (!controller) {
+    return;
+  }
+  addLog('stop()!');
+  controller.stop();
+})
+
+document.querySelector('#resume').addEventListener('click', () => {
+  if (!controller) {
+    return;
+  }
+  addLog('resume()~');
+  controller.resume();
+})
+
+document.querySelector('#refresh').addEventListener('click', () => {
+  if (!controller) {
+    return;
+  }
+  addLog('refresh()');
+  controller.refresh();
+})
+
+document.querySelector('#refresh1').addEventListener('click', () => {
+  if (!controller) {
+    return;
+  }
+  addLog('refresh(5000)~');
+  controller.refresh(5000);
+})
+
+</script>
+</body>
+</html>

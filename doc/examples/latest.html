@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>cache</title>
+  <link rel="stylesheet" href="./assets/example.css">
+</head>
+<body>
+<input type="text" id="search" autocomplete="off" style="width: 300px"/>
+<label>
+  order by: <input type="checkbox" id="sort" value="asc">
+   <span id="sort-value">asc</span>
+</label>
+<div id="logs">
+</div>
+<script type="module">
+  import logs from "./helper/logs.js";
+  import fetchMock from "./helper/fetchMock.js";
+  import { latest } from "../../dist/req-helper.esm.js";
+  const addLog = logs('#logs');
+
+  const search = document.querySelector('#search')
+  const sort = document.querySelector('#sort')
+  const sortValue = document.querySelector('#sort-value')
+  let order = 'asc'
+  const proxyFn = latest((setAbortHandler, key, update) => {
+    update.waiting = true;
+    let abortToken = {};
+    setAbortHandler(() => {
+      abortToken.abort()
+    })
+    const pms = fetchMock(300, 800, abortToken)
+    pms.then(() => {
+      update(' <i>RESPONSE!</i>')
+    }).catch(() => {
+      update(' <b>ABORT!</b>')
+    })
+    return pms;
+  }, { cacheTime: 60000, maxTasks: 2 })
+  search.addEventListener('input', e => {
+    const value = e.target.value.trim();
+    if (!value) {
+      return;
+    }
+    const key = encodeURIComponent(value) + '&' + order;
+    const update = addLog('query key: ' + key + '...');
+    proxyFn(key, update).then(() => {
+      if (!update.waiting) {
+        update(' CACHE!')
+      }
+    })
+  })
+
+  sort.addEventListener('change', e => {
+    sortValue.innerHTML = order = e.target.checked ? 'desc' : 'asc'
+  })
+  addLog('Suppose http response time is 300 - 800 ms...')
+  addLog('latest(fn, { cacheTime: 60000, maxTasks: 2 });')
+</script>
+</body>
+</html>
