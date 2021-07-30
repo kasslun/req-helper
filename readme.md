@@ -33,11 +33,11 @@ require('req-helper', ({ polling }) => {
 ```
 
 ## Function description
-- [cache](./doc/markdowns/cache.md): The response to a request is cached in memory for a period of time.
-- [deResend](./doc/markdowns/deResend.md): Prevent duplicate requests.
-- [latest](./doc/markdowns/latest.md): Control frequent queries in a short time through cache and concurrency restrictions.
-- [packing](./doc/markdowns/packing.md): Merge frequently requested data and use the requested data for batch interface.
-- [polling](./doc/markdowns/polling.md): Polling for the same request.
+- cache: The response to a request is cached in memory for a period of time.
+- deResend: Prevent duplicate requests.
+- latest: Control frequent queries in a short time through cache and concurrency restrictions.
+- packing: Merge frequently requested data and use the requested data for batch interface.
+- polling: Polling for the same request.
 
 
 ## Documentation
