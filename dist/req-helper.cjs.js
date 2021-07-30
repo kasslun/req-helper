@@ -1,6 +1,6 @@
 /**
  * req-helper
- * v0.0.1-beta.5
+ * v0.0.1-beta.7
  * By kasslun@gmail.com
  * @license MIT License.
  */

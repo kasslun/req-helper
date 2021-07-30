@@ -7,7 +7,7 @@
   "scripts": {
     "test": "jest --verbose --detectOpenHandles",
     "lint": "eslint --ext .ts src",
-    "build": "rm -fr dist && tsc --target ES6 --outDir dist -d --declarationDir types --moduleResolution node src/index.ts && set NODE_ENV=production && rollup -c rollup.config.js"
+    "build": "rm -fr dist && rm -fr types && tsc --target ES6 --outDir dist -d --declarationDir types --moduleResolution node src/index.ts && set NODE_ENV=production && rollup -c rollup.config.js"
   },
   "repository": {
     "type": "git",

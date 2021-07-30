@@ -1,16 +1,16 @@
-# req-helper
+# Req Helper
 
-The req-helper  is an ajax, fetch and other interface request help library. It provides some functions to reduce the number of HTTP requests. Proxy functions are used to control the sending frequency of requests and cache responses.
+The Req Helper  is an ajax, fetch and other interface request help library. It provides some functions to reduce the number of HTTP requests. Proxy functions are used to control the sending frequency of requests and cache responses.
 
 It is applicable to client-side JavaScript (such as Browser, React Native, Electron) and server-side Node environment.
 
 ## Install and usage
 
-Install via npm or yarn.
+Install via npm.
 ```shell
 npm install req-helper
 ```
-or
+or yarn
 ```shell
 yarn add req-helper
 ```
@@ -33,15 +33,15 @@ require('req-helper', ({ polling }) => {
 ```
 
 ## Function description
-- cache: The response to a request is cached in memory for a period of time.
-- deResend: Prevent duplicate requests.
-- latest: Control frequent queries in a short time through cache and concurrency restrictions.
-- packing: Merge frequently requested data and use the requested data for batch interface.
-- polling: Polling for the same request.
+- **cache**: The response to a request is cached in memory for a period of time.
+- **deResend**: Prevent duplicate requests.
+- **latest**: Control frequent queries in a short time through cache and concurrency restrictions.
+- **packing**: Merge frequently requested data and use the requested data for batch interface.
+- **polling**: Polling for the same request.
 
 
 ## Documentation
-[Click to see the documentation](https://kasslun.github.io/req-helper.doc/)
+[Click to see the documentation.](https://kasslun.github.io/req-helper.doc/)
 
 ## License
 

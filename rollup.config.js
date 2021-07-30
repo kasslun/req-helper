@@ -44,11 +44,17 @@ const outputMap = [
   },
   {
     file: "dist/req-helper.umd.js",
-    format: 'umd'
+    format: 'umd',
+    globals: {
+      'req-helper': 'reqHelper'
+    }
   },
   {
     file: "dist/req-helper.umd.min.js",
     format: 'umd',
+    globals: {
+      'req-helper': 'reqHelper'
+    },
     plugins: [terser({
       output: {
         comments: function (node, comment) {
@@ -70,8 +76,4 @@ export default outputMap.map(output => {
         }
     }
   )
-  // if (/min\.js$/.test(output.file)) {
-  //   conf.plugins = [...conf.plugins, terser({ compress: { drop_console: true } })]
-  // }
-  // return conf;
 })
