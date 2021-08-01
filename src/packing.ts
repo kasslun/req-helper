@@ -1,15 +1,36 @@
-import { clearDelay, DelayId, setDelay } from './lib'
+import { clearDelay, setDelay } from './lib'
 
 interface IPut<T> {
   (arg: T): void;
   pack: () => void;
 }
 
-const validTime = (name: string, time: number | undefined) => {
-  if (time !== undefined && (!Number.isInteger(time) || time < 0)) {
-    throw TypeError(`Failed to execute 'packing': property '${name}' of parameter 2 is not a non-negative integer.`)
-  }
-}
+type DelayId = ReturnType<typeof setDelay>
+
+
+/**
+ * Documentation https://kasslun.github.io/req-helper.doc/#packing
+ * The packing() can be used to merge requests, through which you can package (push a single data into an array)
+ * a batch of data for batch sending. Used to reduce the number of requests. It supports packaging within a fixed
+ * time duration and alive time waitTime, as well as packaging by size capacity.
+ *
+ * It is mainly used to reduce the number of requests in frequent request scenarios such as system monitoring data reporting and user's behavior data reporting.
+ *
+ * @param receiver. receiver(packagedData): Function, packagedData(array) receiver. Triggered when the condition of
+ * parameter 2 is arbitrarily satisfied and the package is not empty.
+ *
+ * @param condition. Object, Conditions that trigger packaging. There must be more than 1 of the 3 conditions.
+ *
+ * - condition.duration: Number, optional. The packaging is triggered again after a fixed time(ms) at the last trigger;
+ * value of 0 triggers packaging at the next macro task. This condition takes effect when put() is called again after packaging.
+ *
+ * - condition.waitTime: Number, optional. Packaging is triggered if it is not put again within a period of time(ms) after
+ * the last put; value of 0 triggers packaging at the next macro task. This condition takes effect again each time put() is called.
+ *
+ * - condition.capacity: Number, optional. Triggered when the number of put reaches or exceeds the capacity. This condition is determined each time put() is called.
+ *
+ * @return The packing(receiver, condition) Returns a put function to receive data.
+ */
 export default <T, U>(receiver: (this: U, arg: T[]) => any, condition: {
   readonly duration?: number;
   readonly waitTime?: number;
@@ -28,12 +49,12 @@ export default <T, U>(receiver: (this: U, arg: T[]) => any, condition: {
     throw new TypeError('Failed to execute \'packing\': parameter 2 needs to have properties \'duration\', \'capacity\' or \'waitTime\'.')
   }
 
+  validTime('duration', duration)
+  validTime('waitTime', waitTime)
+
   if (capacity !== undefined && (!Number.isInteger(capacity) || capacity < 1)) {
     throw new TypeError('Failed to execute \'packing\': property \'capacity\' of parameter 2 is not a positive integer.')
   }
-
-  validTime('duration', duration)
-  validTime('waitTime', waitTime)
 
   let isCallPut = false;
   let thisArg: U
@@ -93,4 +114,10 @@ export default <T, U>(receiver: (this: U, arg: T[]) => any, condition: {
   }
 
   return assembler
+}
+
+const validTime = (name: string, time: number | undefined) => {
+  if (time !== undefined && (!Number.isInteger(time) || time < 0)) {
+    throw TypeError(`Failed to execute 'packing': property '${name}' of parameter 2 is not a non-negative integer.`)
+  }
 }

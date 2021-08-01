@@ -17,6 +17,7 @@ module.exports = {
   ],
   "rules": {
     "@typescript-eslint/no-explicit-any": ["off", { "ignoreRestArgs": true }],
-    "@typescript-eslint/no-empty-function": "off"
+    "@typescript-eslint/no-empty-function": "off",
+    "@typescript-eslint/explicit-module-boundary-types": "off"
   }
 };

@@ -1,5 +1,5 @@
 
-import { setDelay, clearDelay, DelayId } from './lib'
+import {setDelay, clearDelay, isPromise} from './lib'
 
 interface IController {
   readonly stop: () => void;
@@ -7,12 +7,27 @@ interface IController {
   readonly refresh: (newGap?: number) => void;
 }
 
-const notDo = () => {}
+enum PollingAction {
+  Init,
+  UserTask,
+  Timer,
+  WillStop
+}
+
 /**
- * polling
- * call fn where fn().finally
- * @param fn
- * @param gap
+ * Documentation https://kasslun.github.io/req-helper.doc/#polling
+ * The polling() controls the polling of ajax/fetch. It needs an argument fn of function type, and fn needs to return a
+ * Promise object. When polling() is called, fn is called synchronously. When the Promise object returned by the fn call,
+ * it will call the fn again after gap (unit:ms) and loop indefinitely.
+ *
+ * @param fn. Function, polled function, no parameters. need to return a Promise object.
+ * @param gap. Number, optional, polling gap(ms) after Promise fulfilled(or rejected). Expected to be a positive integer, The default value is 10000.
+ *
+ * @return polling() returns an object controller to control the call of fn.
+ * - controller.stop(): Stop fn's call loop.
+ * - controller.resume(): If the loop stops, will resume.
+ * - controller.refresh([newGap]): Stop fn's call loop and start a new call loop immediately. If the parameter newGap(number)
+ * is passed in, the new loop follow the newGap.
  */
 export default <T>(fn: () => Promise<T>, gap = 10000): IController => {
   if (typeof fn !== 'function') {
@@ -23,24 +38,40 @@ export default <T>(fn: () => Promise<T>, gap = 10000): IController => {
     throw new TypeError('Failed to execute \'polling\': parameter 2 is not a positive integer.')
   }
 
-  let delayId: DelayId | undefined
+  let delayId: ReturnType<typeof setDelay> | undefined
+  let status = PollingAction.Init
   const proxy = () => {
-    fn().catch(notDo).then(() => {
-      delayId = setDelay(proxy, gap)
+    status = PollingAction.UserTask
+    const userTask = fn()
+    if (!isPromise(userTask)) {
+      status = PollingAction.Init
+      throw new TypeError('Failed to execute \'proxy\' in \'polling\' : the return value of the parameter 1 of \'cache\' call is not of type \'Promise\'.')
+    }
+    userTask.catch(noop).then(() => {
+      if (status === PollingAction.UserTask) {
+        status = PollingAction.Timer
+        delayId = setDelay(proxy, gap)
+      } else {
+        status = PollingAction.Init
+      }
     })
   }
   proxy()
 
   return {
     stop () {
-      if (delayId !== undefined) {
+      if (status === PollingAction.Timer) {
         clearDelay(delayId)
-        delayId = undefined
+        status = PollingAction.Init
+      } else if (status === PollingAction.UserTask) {
+        status = PollingAction.WillStop;
       }
     },
     resume () {
-      if (delayId === undefined) {
+      if (status === PollingAction.Init) {
         proxy()
+      } else if (status === PollingAction.WillStop) {
+        status = PollingAction.UserTask
       }
     },
     refresh (newGap?: number) {
@@ -50,8 +81,22 @@ export default <T>(fn: () => Promise<T>, gap = 10000): IController => {
         }
         gap = newGap;
       }
-      this.stop()
-      proxy()
+
+      switch (status) {
+        case PollingAction.Timer:
+          clearDelay(delayId)
+          status = PollingAction.Init
+          proxy();
+          break;
+        case PollingAction.WillStop:
+          status = PollingAction.UserTask
+          break;
+        case PollingAction.Init:
+          proxy();
+          break;
+      }
     }
   }
 }
+
+const noop = () => {}
