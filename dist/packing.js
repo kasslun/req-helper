@@ -30,12 +30,12 @@ export default (receiver, condition) => {
         throw new TypeError('Failed to execute \'packing\': parameter 2 is not of type \'Object\'.');
     }
     const { duration, waitTime, capacity } = condition;
-    if (duration === undefined && waitTime === undefined && capacity === undefined) {
+    if (duration == undefined && waitTime == undefined && capacity == undefined) {
         throw new TypeError('Failed to execute \'packing\': parameter 2 needs to have properties \'duration\', \'capacity\' or \'waitTime\'.');
     }
     validTime('duration', duration);
     validTime('waitTime', waitTime);
-    if (capacity !== undefined && (!Number.isInteger(capacity) || capacity < 1)) {
+    if (capacity != undefined && (!Number.isInteger(capacity) || capacity < 1)) {
         throw new TypeError('Failed to execute \'packing\': property \'capacity\' of parameter 2 is not a positive integer.');
     }
     let isCallPut = false;
@@ -43,31 +43,28 @@ export default (receiver, condition) => {
     let box = [];
     let durationDelayId;
     let waitTimeDelayId;
-    const assembler = function (...arg) {
+    const put = function (...arg) {
         isCallPut = true;
-        thisArg = thisArg || this;
+        thisArg = thisArg !== null && thisArg !== void 0 ? thisArg : this;
         if (arg.length) {
             box = box.concat(arg);
             // condition.capacity;
-            const length = box.length;
-            if (capacity && length >= capacity) {
-                assembler.pack();
+            if (capacity && box.length >= capacity) {
+                put.pack();
                 return;
             }
         }
         // condition.duration
-        if (duration !== undefined && durationDelayId === undefined) {
-            durationDelayId = setDelay(assembler.pack, duration);
+        if (duration != undefined && durationDelayId === undefined) {
+            durationDelayId = setDelay(put.pack, duration);
         }
         // condition.waitTime
-        if (waitTime !== undefined) {
-            if (waitTimeDelayId !== undefined) {
-                clearDelay(waitTimeDelayId);
-            }
-            waitTimeDelayId = setDelay(assembler.pack, waitTime);
+        if (waitTime != undefined) {
+            clearDelay(waitTimeDelayId);
+            waitTimeDelayId = setDelay(put.pack, waitTime);
         }
     };
-    assembler.pack = () => {
+    put.pack = () => {
         if (!isCallPut) {
             return;
         }
@@ -86,10 +83,10 @@ export default (receiver, condition) => {
         box = [];
         receiver.call(thisArg, packedBox);
     };
-    return assembler;
+    return put;
 };
 const validTime = (name, time) => {
-    if (time !== undefined && (!Number.isInteger(time) || time < 0)) {
+    if (time != undefined && (!Number.isInteger(time) || time < 0)) {
         throw TypeError(`Failed to execute 'packing': property '${name}' of parameter 2 is not a non-negative integer.`);
     }
 };

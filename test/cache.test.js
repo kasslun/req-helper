@@ -17,12 +17,12 @@ describe('cache()', () => {
       assert.throws(() => cache(fn, -1), { name: 'TypeError' })
       assert.throws(() => cache(fn, NaN), { name: 'TypeError' })
       assert.throws(() => cache(fn, '1'), { name: 'TypeError' })
-      assert.throws(() => cache(fn, null), { name: 'TypeError' })
+      assert.throws(() => cache(fn, {}), { name: 'TypeError' })
     });
 
     it('should arg 3: expirationHandler error', () =>  {
       const fn = () => Promise.resolve();
-      assert.throws(() => cache(fn, 1, null), { name: 'TypeError' })
+      assert.throws(() => cache(fn, 1, false), { name: 'TypeError' })
       assert.throws(() => cache(fn, 1, 1), { name: 'TypeError' })
       assert.throws(() => cache(fn, 1, ''), { name: 'TypeError' })
       assert.throws(() => cache(fn, 1, []), { name: 'TypeError' })

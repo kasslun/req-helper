@@ -25,7 +25,7 @@ export default (fn, gap = 10000) => {
     if (typeof fn !== 'function') {
         throw new TypeError('Failed to execute \'polling\': parameter 1 is not of type \'Function\'.');
     }
-    if (!Number.isInteger(gap) || gap < 1) {
+    if (gap != undefined && !Number.isInteger(gap) || gap < 1) {
         throw new TypeError('Failed to execute \'polling\': parameter 2 is not a positive integer.');
     }
     let delayId;
@@ -67,7 +67,7 @@ export default (fn, gap = 10000) => {
             }
         },
         refresh(newGap) {
-            if (newGap !== undefined) {
+            if (newGap != undefined) {
                 if (!Number.isInteger(newGap) || newGap < 1) {
                     throw new TypeError('Failed to execute \'changeGap\': parameter 1 is not a positive integer.');
                 }

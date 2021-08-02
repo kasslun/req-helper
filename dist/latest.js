@@ -38,10 +38,10 @@ export default function (fn, config = { maxTasks: 4 }) {
         throw new TypeError('Failed to execute \'latest\': optional parameter 2 is not of type \'Object\'.');
     }
     const { cacheTime, maxTasks = 4 } = config;
-    if (cacheTime !== undefined && (!Number.isInteger(cacheTime) || cacheTime < 1)) {
+    if (cacheTime != undefined && (!Number.isInteger(cacheTime) || cacheTime < 1)) {
         throw new TypeError('Failed to execute \'latest\': optional property `cacheTime` of parameter 2 not is a positive integer');
     }
-    if (!Number.isInteger(maxTasks) || maxTasks < 1) {
+    if (maxTasks != undefined && (!Number.isInteger(maxTasks) || maxTasks < 1)) {
         throw new TypeError('Failed to execute \'latest\': optional property `maxTasks` of parameter 2 not is a positive integer');
     }
     let thisArg;
@@ -53,66 +53,63 @@ export default function (fn, config = { maxTasks: 4 }) {
     return function proxy(cacheKey, ...args) {
         thisArg = thisArg || this;
         const conditionType = typeof cacheKey;
-        const allowCaching = cacheTime !== undefined && (conditionType === 'string' || conditionType === 'number' && Number.isNaN(cacheKey));
+        const allowCaching = cacheTime != undefined && (conditionType === 'string' || conditionType === 'number' && !Number.isNaN(cacheKey));
         // Hit cache
         if (allowCaching && caches.has(cacheKey)) {
             return caches.get(cacheKey)();
         }
-        // reject prev proxy, keep user data latest
-        if (proxyPromise && proxyPromise.status === PromiseStatus.Pending) {
+        // reject previous proxy, keep user task is latest
+        if ((proxyPromise === null || proxyPromise === void 0 ? void 0 : proxyPromise.status) === PromiseStatus.Pending) {
             proxyPromise.reject(new Error('The latest aborted!'));
+            proxyPromise = undefined;
         }
         // max tasks limit, such as http request limit;
         if (userTaskSize >= maxTasks) {
-            if (abortHandlerList[0]) {
-                abortHandlerList[0]();
-                abortHandlerList.shift();
-            }
             // return pending;
-            return new Promise((resolve, reject) => {
+            const pms = new Promise((resolve, reject) => {
                 if (waiting) {
                     waiting.reject('The latest aborted!');
                 }
                 waiting = { resolve, reject, cacheKey, args };
             });
+            if (typeof abortHandlerList[0] === 'function') {
+                abortHandlerList[0]();
+                abortHandlerList.shift();
+            }
+            return pms;
         }
-        // bound user fn
-        let abortHandler;
+        let abortIndex;
         const setAbortHandler = (handler) => {
             if (typeof handler !== 'function') {
                 throw new TypeError('Failed to execute \'setAbortHandler\': parameter 1 is not of type \'Function\'.');
             }
-            abortHandler = handler;
-            abortHandlerList.push(handler);
+            abortIndex = abortHandlerList.push(handler) - 1;
         };
+        // bound user fn
         let boundFn = () => fn.call(thisArg, setAbortHandler, cacheKey, ...args);
         // cache fn
         if (allowCaching) {
-            boundFn = cache(boundFn, cacheTime, () => {
+            caches.set(cacheKey, boundFn = cache(boundFn, cacheTime, () => {
                 caches.delete(cacheKey);
-            });
-            caches.set(cacheKey, boundFn);
+            }));
         }
         userTaskSize++;
         const userTask = boundFn();
         if (!isPromise(userTask)) {
+            userTaskSize--;
             throw new TypeError('Failed to execute \'proxy\' in \'latest\' : the return value of the parameter 1 of \'cache\' call is not of type \'Promise\'.');
         }
-        proxyPromise = generateProxyPromise(userTask);
-        userTask.catch(() => { }).then(() => {
+        userTask.catch(noop).then(() => {
             userTaskSize--;
-            if (abortHandler) {
-                const index = abortHandlerList.indexOf(abortHandler);
-                if (index !== -1) {
-                    abortHandlerList.splice(index, 1);
-                }
+            if (abortIndex !== undefined) {
+                abortHandlerList.splice(abortIndex, 1);
             }
             if (waiting) {
                 waiting.resolve(proxy.call(thisArg, waiting.cacheKey, ...waiting.args));
                 waiting = undefined;
             }
         });
-        return proxyPromise.handler;
+        return (proxyPromise = generateProxyPromise(userTask)).handler;
     };
 }
 /**
@@ -138,3 +135,4 @@ function generateProxyPromise(pms) {
     });
     return separator;
 }
+const noop = () => { };

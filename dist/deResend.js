@@ -29,43 +29,44 @@ export default (fn, statusChange, gap = 0) => {
     if (typeof fn !== 'function') {
         throw new TypeError('Failed to execute \'deResend\': parameter 1 is not of type \'Function\'.');
     }
-    if (statusChange !== undefined && typeof statusChange !== 'function') {
+    if (statusChange != undefined && typeof statusChange !== 'function') {
         throw new TypeError('Failed to execute \'deResend\': optional parameter 2 is not of type \'Function\'.');
     }
-    if (gap !== undefined && (!Number.isInteger(gap) || gap < 0)) {
+    if (gap != undefined && (!Number.isInteger(gap) || gap < 0)) {
         throw new TypeError('Failed to execute \'deResend\': parameter 3 is not undefined or a non-negative integer.');
     }
     let thisArg;
     let disabled = false;
     let delayId;
-    const setDisable = statusChange ? (flag) => {
+    const setDisable = (flag) => {
         if (disabled !== flag) {
             disabled = flag;
-            statusChange.call(thisArg, disabled);
+            statusChange === null || statusChange === void 0 ? void 0 : statusChange.call(thisArg, disabled);
         }
-    } : (flag) => {
-        disabled = flag;
     };
     const proxy = function (...arg) {
         thisArg = thisArg || this;
         if (disabled) {
-            return Promise.reject(new Error('deResendRet'));
+            return Promise.reject(new Error('prevent resend'));
         }
         setDisable(true);
         const pms = fn.call(this, ...arg);
         if (!isPromise(pms)) {
-            throw new TypeError('Failed to execute \'proxy\' in \'deResend\' : the return value of the parameter 1 of \'cache\' call is not of type \'Promise\'.');
+            setDisable(false);
+            throw new TypeError('Failed to execute \'fn\' in \'deResend\' : the return value of the \'fn\' called is not of type \'Promise\'.');
         }
-        if (gap !== undefined) {
-            pms.then(() => {
-                if (disabled) {
-                    delayId = setDelay(() => {
-                        setDisable(false);
-                    }, gap);
+        pms
+            .catch(() => setDisable(false))
+            .then(() => {
+            if (disabled) {
+                if (gap != undefined) {
+                    delayId = setDelay(() => setDisable(false), gap);
                 }
-            });
-            pms.catch(() => { setDisable(false); });
-        }
+                else {
+                    setDisable(false);
+                }
+            }
+        });
         return pms;
     };
     proxy.enable = () => {

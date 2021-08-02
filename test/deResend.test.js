@@ -18,12 +18,12 @@ describe('deResend()', () => {
       assert.throws(() => deResend(fn, -1), { name: 'TypeError' })
       assert.throws(() => deResend(fn, {}), { name: 'TypeError' })
       assert.throws(() => deResend(fn, '1'), { name: 'TypeError' })
-      assert.throws(() => deResend(fn, null), { name: 'TypeError' })
+      assert.throws(() => deResend(fn, false), { name: 'TypeError' })
     });
 
     it('should arg 3: gap error', () =>  {
       const fn = () => Promise.resolve();
-      assert.throws(() => deResend(fn, none, null), { name: 'TypeError' })
+      assert.throws(() => deResend(fn, none, {}), { name: 'TypeError' })
       assert.throws(() => deResend(fn, none, -1), { name: 'TypeError' })
       assert.throws(() => deResend(fn, none, ''), { name: 'TypeError' })
       assert.throws(() => deResend(fn, none, []), { name: 'TypeError' })

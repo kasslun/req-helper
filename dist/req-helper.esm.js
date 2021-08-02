@@ -1,6 +1,6 @@
 /**
  * req-helper
- * v0.0.2
+ * v0.0.3
  * By kasslun@gmail.com
  * @license MIT License.
  */
@@ -87,21 +87,21 @@ var cache = (fn, cacheTime, expirationHandler) => {
     if (typeof fn !== 'function') {
         throw new TypeError('Failed to execute \'cache\': parameter 1 is not of type \'Function\'.');
     }
-    if (cacheTime !== undefined && (!Number.isInteger(cacheTime) || cacheTime < 0)) {
+    if (cacheTime != undefined && (!Number.isInteger(cacheTime) || cacheTime < 0)) {
         throw new TypeError('Failed to execute \'cache\': parameter 2 is not undefined or a non-negative integer.');
     }
-    if (expirationHandler !== undefined && typeof expirationHandler !== 'function') {
-        throw new TypeError('Failed to execute \'cache\' : optional parameter 3 is not undefined or of type \'Function\'.');
+    if (expirationHandler != undefined && typeof expirationHandler !== 'function') {
+        throw new TypeError('Failed to execute \'cache\': optional parameter 3 is not undefined, null or of type \'Function\'.');
     }
     let thisArg;
     let delayId;
     let cache;
-    const expireCb = expirationHandler ? () => {
+    const expireCb = () => {
         if (cache) {
             cache = undefined;
-            expirationHandler && expirationHandler.call(thisArg);
+            expirationHandler === null || expirationHandler === void 0 ? void 0 : expirationHandler.call(thisArg);
         }
-    } : () => { cache = undefined; };
+    };
     const proxy = function (refresh = false) {
         thisArg = thisArg || this;
         if (refresh) {
@@ -110,18 +110,18 @@ var cache = (fn, cacheTime, expirationHandler) => {
         if (!cache) {
             cache = fn.call(thisArg);
             if (!isPromise(cache)) {
-                throw new TypeError('Failed to execute \'proxy\' in \'cache\' : the return value of the parameter 1 of \'cache\' call is not of type \'Promise\'.');
+                throw new TypeError('Failed to execute \'fn\' in \'cache\' : the return value of the \'fn\' called is not of type \'Promise\'.');
             }
-            cache.catch(expireCb);
-            if (cacheTime !== undefined) {
+            cache.catch(proxy.expire);
+            if (cacheTime != undefined) {
                 delayId = setDelay(expireCb, cacheTime);
             }
         }
         return cache;
     };
     proxy.expire = () => {
-        expireCb();
         clearDelay(delayId);
+        expireCb();
     };
     return proxy;
 };
@@ -156,43 +156,44 @@ var deResend = (fn, statusChange, gap = 0) => {
     if (typeof fn !== 'function') {
         throw new TypeError('Failed to execute \'deResend\': parameter 1 is not of type \'Function\'.');
     }
-    if (statusChange !== undefined && typeof statusChange !== 'function') {
+    if (statusChange != undefined && typeof statusChange !== 'function') {
         throw new TypeError('Failed to execute \'deResend\': optional parameter 2 is not of type \'Function\'.');
     }
-    if (gap !== undefined && (!Number.isInteger(gap) || gap < 0)) {
+    if (gap != undefined && (!Number.isInteger(gap) || gap < 0)) {
         throw new TypeError('Failed to execute \'deResend\': parameter 3 is not undefined or a non-negative integer.');
     }
     let thisArg;
     let disabled = false;
     let delayId;
-    const setDisable = statusChange ? (flag) => {
+    const setDisable = (flag) => {
         if (disabled !== flag) {
             disabled = flag;
-            statusChange.call(thisArg, disabled);
+            statusChange === null || statusChange === void 0 ? void 0 : statusChange.call(thisArg, disabled);
         }
-    } : (flag) => {
-        disabled = flag;
     };
     const proxy = function (...arg) {
         thisArg = thisArg || this;
         if (disabled) {
-            return Promise.reject(new Error('deResendRet'));
+            return Promise.reject(new Error('prevent resend'));
         }
         setDisable(true);
         const pms = fn.call(this, ...arg);
         if (!isPromise(pms)) {
-            throw new TypeError('Failed to execute \'proxy\' in \'deResend\' : the return value of the parameter 1 of \'cache\' call is not of type \'Promise\'.');
+            setDisable(false);
+            throw new TypeError('Failed to execute \'fn\' in \'deResend\' : the return value of the \'fn\' called is not of type \'Promise\'.');
         }
-        if (gap !== undefined) {
-            pms.then(() => {
-                if (disabled) {
-                    delayId = setDelay(() => {
-                        setDisable(false);
-                    }, gap);
+        pms
+            .catch(() => setDisable(false))
+            .then(() => {
+            if (disabled) {
+                if (gap != undefined) {
+                    delayId = setDelay(() => setDisable(false), gap);
                 }
-            });
-            pms.catch(() => { setDisable(false); });
-        }
+                else {
+                    setDisable(false);
+                }
+            }
+        });
         return pms;
     };
     proxy.enable = () => {
@@ -242,10 +243,10 @@ function latest (fn, config = { maxTasks: 4 }) {
         throw new TypeError('Failed to execute \'latest\': optional parameter 2 is not of type \'Object\'.');
     }
     const { cacheTime, maxTasks = 4 } = config;
-    if (cacheTime !== undefined && (!Number.isInteger(cacheTime) || cacheTime < 1)) {
+    if (cacheTime != undefined && (!Number.isInteger(cacheTime) || cacheTime < 1)) {
         throw new TypeError('Failed to execute \'latest\': optional property `cacheTime` of parameter 2 not is a positive integer');
     }
-    if (!Number.isInteger(maxTasks) || maxTasks < 1) {
+    if (maxTasks != undefined && (!Number.isInteger(maxTasks) || maxTasks < 1)) {
         throw new TypeError('Failed to execute \'latest\': optional property `maxTasks` of parameter 2 not is a positive integer');
     }
     let thisArg;
@@ -257,66 +258,63 @@ function latest (fn, config = { maxTasks: 4 }) {
     return function proxy(cacheKey, ...args) {
         thisArg = thisArg || this;
         const conditionType = typeof cacheKey;
-        const allowCaching = cacheTime !== undefined && (conditionType === 'string' || conditionType === 'number' && Number.isNaN(cacheKey));
+        const allowCaching = cacheTime != undefined && (conditionType === 'string' || conditionType === 'number' && !Number.isNaN(cacheKey));
         // Hit cache
         if (allowCaching && caches.has(cacheKey)) {
             return caches.get(cacheKey)();
         }
-        // reject prev proxy, keep user data latest
-        if (proxyPromise && proxyPromise.status === PromiseStatus.Pending) {
+        // reject previous proxy, keep user task is latest
+        if ((proxyPromise === null || proxyPromise === void 0 ? void 0 : proxyPromise.status) === PromiseStatus.Pending) {
             proxyPromise.reject(new Error('The latest aborted!'));
+            proxyPromise = undefined;
         }
         // max tasks limit, such as http request limit;
         if (userTaskSize >= maxTasks) {
-            if (abortHandlerList[0]) {
-                abortHandlerList[0]();
-                abortHandlerList.shift();
-            }
             // return pending;
-            return new Promise((resolve, reject) => {
+            const pms = new Promise((resolve, reject) => {
                 if (waiting) {
                     waiting.reject('The latest aborted!');
                 }
                 waiting = { resolve, reject, cacheKey, args };
             });
+            if (typeof abortHandlerList[0] === 'function') {
+                abortHandlerList[0]();
+                abortHandlerList.shift();
+            }
+            return pms;
         }
-        // bound user fn
-        let abortHandler;
+        let abortIndex;
         const setAbortHandler = (handler) => {
             if (typeof handler !== 'function') {
                 throw new TypeError('Failed to execute \'setAbortHandler\': parameter 1 is not of type \'Function\'.');
             }
-            abortHandler = handler;
-            abortHandlerList.push(handler);
+            abortIndex = abortHandlerList.push(handler) - 1;
         };
+        // bound user fn
         let boundFn = () => fn.call(thisArg, setAbortHandler, cacheKey, ...args);
         // cache fn
         if (allowCaching) {
-            boundFn = cache(boundFn, cacheTime, () => {
+            caches.set(cacheKey, boundFn = cache(boundFn, cacheTime, () => {
                 caches.delete(cacheKey);
-            });
-            caches.set(cacheKey, boundFn);
+            }));
         }
         userTaskSize++;
         const userTask = boundFn();
         if (!isPromise(userTask)) {
+            userTaskSize--;
             throw new TypeError('Failed to execute \'proxy\' in \'latest\' : the return value of the parameter 1 of \'cache\' call is not of type \'Promise\'.');
         }
-        proxyPromise = generateProxyPromise(userTask);
-        userTask.catch(() => { }).then(() => {
+        userTask.catch(noop$1).then(() => {
             userTaskSize--;
-            if (abortHandler) {
-                const index = abortHandlerList.indexOf(abortHandler);
-                if (index !== -1) {
-                    abortHandlerList.splice(index, 1);
-                }
+            if (abortIndex !== undefined) {
+                abortHandlerList.splice(abortIndex, 1);
             }
             if (waiting) {
                 waiting.resolve(proxy.call(thisArg, waiting.cacheKey, ...waiting.args));
                 waiting = undefined;
             }
         });
-        return proxyPromise.handler;
+        return (proxyPromise = generateProxyPromise(userTask)).handler;
     };
 }
 /**
@@ -342,6 +340,7 @@ function generateProxyPromise(pms) {
     });
     return separator;
 }
+const noop$1 = () => { };
 
 /**
  * Documentation https://kasslun.github.io/req-helper.doc/#packing
@@ -374,12 +373,12 @@ var packing = (receiver, condition) => {
         throw new TypeError('Failed to execute \'packing\': parameter 2 is not of type \'Object\'.');
     }
     const { duration, waitTime, capacity } = condition;
-    if (duration === undefined && waitTime === undefined && capacity === undefined) {
+    if (duration == undefined && waitTime == undefined && capacity == undefined) {
         throw new TypeError('Failed to execute \'packing\': parameter 2 needs to have properties \'duration\', \'capacity\' or \'waitTime\'.');
     }
     validTime('duration', duration);
     validTime('waitTime', waitTime);
-    if (capacity !== undefined && (!Number.isInteger(capacity) || capacity < 1)) {
+    if (capacity != undefined && (!Number.isInteger(capacity) || capacity < 1)) {
         throw new TypeError('Failed to execute \'packing\': property \'capacity\' of parameter 2 is not a positive integer.');
     }
     let isCallPut = false;
@@ -387,31 +386,28 @@ var packing = (receiver, condition) => {
     let box = [];
     let durationDelayId;
     let waitTimeDelayId;
-    const assembler = function (...arg) {
+    const put = function (...arg) {
         isCallPut = true;
-        thisArg = thisArg || this;
+        thisArg = thisArg !== null && thisArg !== void 0 ? thisArg : this;
         if (arg.length) {
             box = box.concat(arg);
             // condition.capacity;
-            const length = box.length;
-            if (capacity && length >= capacity) {
-                assembler.pack();
+            if (capacity && box.length >= capacity) {
+                put.pack();
                 return;
             }
         }
         // condition.duration
-        if (duration !== undefined && durationDelayId === undefined) {
-            durationDelayId = setDelay(assembler.pack, duration);
+        if (duration != undefined && durationDelayId === undefined) {
+            durationDelayId = setDelay(put.pack, duration);
         }
         // condition.waitTime
-        if (waitTime !== undefined) {
-            if (waitTimeDelayId !== undefined) {
-                clearDelay(waitTimeDelayId);
-            }
-            waitTimeDelayId = setDelay(assembler.pack, waitTime);
+        if (waitTime != undefined) {
+            clearDelay(waitTimeDelayId);
+            waitTimeDelayId = setDelay(put.pack, waitTime);
         }
     };
-    assembler.pack = () => {
+    put.pack = () => {
         if (!isCallPut) {
             return;
         }
@@ -430,10 +426,10 @@ var packing = (receiver, condition) => {
         box = [];
         receiver.call(thisArg, packedBox);
     };
-    return assembler;
+    return put;
 };
 const validTime = (name, time) => {
-    if (time !== undefined && (!Number.isInteger(time) || time < 0)) {
+    if (time != undefined && (!Number.isInteger(time) || time < 0)) {
         throw TypeError(`Failed to execute 'packing': property '${name}' of parameter 2 is not a non-negative integer.`);
     }
 };
@@ -464,7 +460,7 @@ var polling = (fn, gap = 10000) => {
     if (typeof fn !== 'function') {
         throw new TypeError('Failed to execute \'polling\': parameter 1 is not of type \'Function\'.');
     }
-    if (!Number.isInteger(gap) || gap < 1) {
+    if (gap != undefined && !Number.isInteger(gap) || gap < 1) {
         throw new TypeError('Failed to execute \'polling\': parameter 2 is not a positive integer.');
     }
     let delayId;
@@ -506,7 +502,7 @@ var polling = (fn, gap = 10000) => {
             }
         },
         refresh(newGap) {
-            if (newGap !== undefined) {
+            if (newGap != undefined) {
                 if (!Number.isInteger(newGap) || newGap < 1) {
                     throw new TypeError('Failed to execute \'changeGap\': parameter 1 is not a positive integer.');
                 }

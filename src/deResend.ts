@@ -36,47 +36,51 @@ export default <T, U, V>(fn: (this: V, ...arg: U[]) => Promise<T>, statusChange?
     throw new TypeError('Failed to execute \'deResend\': parameter 1 is not of type \'Function\'.')
   }
 
-  if (statusChange !== undefined && typeof statusChange !== 'function') {
+  if (statusChange != undefined && typeof statusChange !== 'function') {
     throw new TypeError('Failed to execute \'deResend\': optional parameter 2 is not of type \'Function\'.')
   }
 
-  if (gap !== undefined && (!Number.isInteger(gap) || gap < 0)) {
+  if (gap != undefined && (!Number.isInteger(gap) || gap < 0)) {
     throw new TypeError('Failed to execute \'deResend\': parameter 3 is not undefined or a non-negative integer.')
   }
 
   let thisArg: V
   let disabled = false
   let delayId: ReturnType<typeof setDelay> | undefined
-  const setDisable = statusChange ? (flag: boolean) => {
+  const setDisable = (flag: boolean) => {
     if (disabled !== flag) {
       disabled = flag;
-      statusChange.call(thisArg, disabled);
+      statusChange?.call(thisArg, disabled);
     }
-  } : (flag: boolean) => {
-    disabled = flag;
   }
 
   const proxy = function (this: V, ...arg: U[]): Promise<T> {
     thisArg = thisArg || this
+
     if (disabled) {
-      return Promise.reject(new Error('deResendRet'))
+      return Promise.reject(new Error('prevent resend'))
     }
     setDisable(true);
 
     const pms = fn.call(this, ...arg)
     if (!isPromise(pms)) {
-      throw new TypeError('Failed to execute \'proxy\' in \'deResend\' : the return value of the parameter 1 of \'cache\' call is not of type \'Promise\'.')
+      setDisable(false);
+      throw new TypeError('Failed to execute \'fn\' in \'deResend\' : the return value of the \'fn\' called is not of type \'Promise\'.')
     }
-    if (gap !== undefined) {
-      pms.then(() => {
+
+    pms
+      .catch(() => setDisable(false))
+      .then(() => {
         if (disabled) {
-          delayId = setDelay(() => {
+          if (gap != undefined) {
+            delayId = setDelay(() => setDisable(false), gap)
+          } else {
             setDisable(false)
-          }, gap)
+          }
         }
-      })
-      pms.catch(() => { setDisable(false) })
-    }
+      }
+    )
+
     return pms
   } as IProxy<T, U, V>
 

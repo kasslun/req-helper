@@ -23,7 +23,7 @@ describe('latest()', () => {
     it('should arg 2: cacheTime error', () =>  {
       const fn = () => Promise.resolve();
       assert.throws(() => latest(fn, { cacheTime: 0 }), { name: 'TypeError' })
-      assert.throws(() => latest(fn, { cacheTime : null}), { name: 'TypeError' })
+      assert.throws(() => latest(fn, { cacheTime : new Number(1)}), { name: 'TypeError' })
       assert.throws(() => latest(fn, { cacheTime: NaN }), { name: 'TypeError' })
       assert.throws(() => latest(fn, { cacheTime: {} }), { name: 'TypeError' })
       assert.throws(() => latest(fn, { cacheTime: false }), { name: 'TypeError' })
@@ -32,7 +32,7 @@ describe('latest()', () => {
     it('should arg 2: maxTasks error', () =>  {
       const fn = () => Promise.resolve();
       assert.throws(() => latest(fn, { maxTasks: 0 }), { name: 'TypeError' })
-      assert.throws(() => latest(fn, { maxTasks : null}), { name: 'TypeError' })
+      assert.throws(() => latest(fn, { maxTasks : []}), { name: 'TypeError' })
       assert.throws(() => latest(fn, { maxTasks: NaN }), { name: 'TypeError' })
       assert.throws(() => latest(fn, { maxTasks: {} }), { name: 'TypeError' })
       assert.throws(() => latest(fn, { maxTasks: false }), { name: 'TypeError' })

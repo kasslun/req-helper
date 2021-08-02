@@ -22,7 +22,7 @@
  *
  * @return latest() returns a proxy function proxyFn of the fn, the proxy function receives any parameters and finally passes in fn.
  */
-export default function <T, U, V, W = string | number>(fn: (this: U, setAbortHandler: (abortHandler: () => void) => void, cacheKey?: W, ...args: V[]) => Promise<T>, config?: {
+export default function <T, U, V, W = string | number, X = () => void>(fn: (this: U, setAbortHandler: (abortHandler: X) => void, cacheKey?: W, ...args: V[]) => Promise<T>, config?: {
     readonly cacheTime?: number;
     readonly maxTasks?: number;
 }): (this: U, cacheKey?: W, ...args: V[]) => Promise<T>;

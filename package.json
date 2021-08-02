@@ -1,6 +1,6 @@
 {
   "name": "req-helper",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "hello",
   "main": "dist/req-helper.cjs.js",
   "module": "dist/req-helper.esm.js",

@@ -45,14 +45,14 @@ export default <T, U>(receiver: (this: U, arg: T[]) => any, condition: {
   }
   const { duration, waitTime, capacity } = condition
 
-  if (duration === undefined && waitTime === undefined && capacity === undefined) {
+  if (duration == undefined && waitTime == undefined && capacity == undefined) {
     throw new TypeError('Failed to execute \'packing\': parameter 2 needs to have properties \'duration\', \'capacity\' or \'waitTime\'.')
   }
 
   validTime('duration', duration)
   validTime('waitTime', waitTime)
 
-  if (capacity !== undefined && (!Number.isInteger(capacity) || capacity < 1)) {
+  if (capacity != undefined && (!Number.isInteger(capacity) || capacity < 1)) {
     throw new TypeError('Failed to execute \'packing\': property \'capacity\' of parameter 2 is not a positive integer.')
   }
 
@@ -61,35 +61,33 @@ export default <T, U>(receiver: (this: U, arg: T[]) => any, condition: {
   let box: T[] = []
   let durationDelayId: DelayId | undefined
   let waitTimeDelayId: DelayId | undefined
-  const assembler = function (this: U, ...arg: T[]) {
+
+  const put = function (this: U, ...arg: T[]) {
     isCallPut = true;
-    thisArg = thisArg || this;
+    thisArg = thisArg ?? this;
     if (arg.length) {
       box = box.concat(arg)
 
       // condition.capacity;
-      const length = box.length
-      if (capacity && length >= capacity) {
-        assembler.pack()
+      if (capacity && box.length >= capacity) {
+        put.pack()
         return;
       }
     }
 
     // condition.duration
-    if (duration !== undefined && durationDelayId === undefined) {
-      durationDelayId = setDelay(assembler.pack, duration)
+    if (duration != undefined && durationDelayId === undefined) {
+      durationDelayId = setDelay(put.pack, duration)
     }
 
     // condition.waitTime
-    if (waitTime !== undefined) {
-      if (waitTimeDelayId !== undefined) {
-        clearDelay(waitTimeDelayId)
-      }
-      waitTimeDelayId = setDelay(assembler.pack, waitTime)
+    if (waitTime != undefined) {
+      clearDelay(waitTimeDelayId)
+      waitTimeDelayId = setDelay(put.pack, waitTime)
     }
   } as IPut<T>
 
-  assembler.pack = () => {
+  put.pack = () => {
     if (!isCallPut) {
       return;
     }
@@ -113,11 +111,11 @@ export default <T, U>(receiver: (this: U, arg: T[]) => any, condition: {
     receiver.call(thisArg, packedBox)
   }
 
-  return assembler
+  return put
 }
 
 const validTime = (name: string, time: number | undefined) => {
-  if (time !== undefined && (!Number.isInteger(time) || time < 0)) {
+  if (time != undefined && (!Number.isInteger(time) || time < 0)) {
     throw TypeError(`Failed to execute 'packing': property '${name}' of parameter 2 is not a non-negative integer.`)
   }
 }
